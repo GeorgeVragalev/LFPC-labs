@@ -1,0 +1,64 @@
+int function sum(int a, int b){
+
+int sum = a + b
+
+return sum
+
+}
+
+int main(){
+
+int a = 100 
+
+int b = 50
+
+print(sum(a, b))
+
+}
+
+
+INT   int
+FUNCTION   function
+IDENTIFIER   sum
+LPAREN   (
+INT   int
+IDENTIFIER   a
+COMMA   ,
+INT   int
+IDENTIFIER   b
+RPAREN   )
+LBRACE   {
+INT   int
+IDENTIFIER   sum
+EQUAL   =
+IDENTIFIER   a
+PLUS   +
+IDENTIFIER   b
+RETURN   return
+IDENTIFIER   sum
+RBRACE   }
+INT   int
+MAIN   main
+LPAREN   (
+RPAREN   )
+LBRACE   {
+INT   int
+IDENTIFIER   a
+EQUAL   =
+INT   100 
+
+INT   int
+IDENTIFIER   b
+EQUAL   =
+INT   50
+
+PRINT   print
+LPAREN   (
+IDENTIFIER   sum
+LPAREN   (
+IDENTIFIER   a
+COMMA   ,
+IDENTIFIER   b
+RPAREN   )
+RPAREN   )
+RBRACE   }
