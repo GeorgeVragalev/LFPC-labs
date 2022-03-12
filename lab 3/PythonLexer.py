@@ -1,20 +1,22 @@
-TokenTypes = {
-    ".": "DOT", ",": "COMMA",
-    ";": "SEMICOLON", ":": "COLON", "{": "LBRACE", "}": "RBRACE", "(": "LPAREN", ")": "RPAREN", "[": "LBRACKET",
-    "]": "RBRACKET", "+": "PLUS", "-": "MINUS", "/": "SLASH", "%": "MOD", "*": "MULT", "<": "SMALLER", ">": "BIGGER",
-    "=": "EQUAL", "!": "NEGATION", "!=": "NEGATION_EQUAL", "==": 'EQUAL_EQUAL', ">=": "BIGGER_EQUAL",
-    "<=": "SMALLER_EQUAL",
-    "int": "INT", "double": "DOUBLE", "bool": "BOOLEAN", "array": "ARRAY", "char": 'CHAR', "string": "STRING",
-    "for": "FOR",
-    "while": "WHILE", "do": "DO", "if": "IF", "else": "ELSE", "elif": "ELIF", "function": "FUNCTION", "main": "MAIN",
-    "return": "RETURN",
-    "and": "AND", "or": "OR", "true": "TRUE", "false": "FALSE", "print": "PRINT", "": "IDENTIFIER"
-}
+# TokenTypes = {
+#     ".": "DOT", ",": "COMMA",
+#     ";": "SEMICOLON", ":": "COLON", "{": "LBRACE", "}": "RBRACE", "(": "LPAREN", ")": "RPAREN", "[": "LBRACKET",
+#     "]": "RBRACKET", "+": "PLUS", "-": "MINUS", "/": "SLASH", "%": "MOD", "*": "MULT", "<": "SMALLER", ">": "BIGGER",
+#     "=": "EQUAL", "!": "NEGATION", "!=": "NEGATION_EQUAL", "==": 'EQUAL_EQUAL', ">=": "BIGGER_EQUAL",
+#     "<=": "SMALLER_EQUAL",
+#     "int": "INT", "double": "DOUBLE", "bool": "BOOLEAN", "array": "ARRAY", "char": 'CHAR', "string": "STRING",
+#     "for": "FOR",
+#     "while": "WHILE", "do": "DO", "if": "IF", "else": "ELSE", "elif": "ELIF", "function": "FUNCTION", "main": "MAIN",
+#     "return": "RETURN",
+#     "and": "AND", "or": "OR", "true": "TRUE", "false": "FALSE", "print": "PRINT", "": "IDENTIFIER"
+# }
+
 ###Puntuation tokens 
 punctuationTokens = {
     ".": "DOT", ",": "COMMA", ";": "SEMICOLON", ":": "COLON", "{": "LBRACE", "}": "RBRACE", "(": "LPAREN",
     ")": "RPAREN",
     "[": "LBRACKET", "]": "RBRACKET", "+": "PLUS", "-": "MINUS", "/": "SLASH", "%": "MOD", "*": "MULT",
+    "\"": "DOUBLE_QUOTE"
 }
 
 ###Operation tokens
@@ -86,9 +88,23 @@ class Lexer:
 
     #for single characters we simply add them to tokens list
     def setPunctuationTokens(self, punctuation):
-        token = Token(punctuation, punctuationTokens.get(punctuation))
-        self.tokens.append(token)
-        self.increaseCurrent()
+        if punctuation == "\"": # a = "hello"
+            self.increaseCurrent()
+            position = self.current
+            while position != self.length:
+                if self.text[position] != "\"":
+                    position += 1
+                else:
+                    position += 1
+                    break
+            s = self.text[self.current:position-1]
+            token = Token(s, "STRING_VAL")
+            self.tokens.append(token)
+            self.current = position
+        else:
+            token = Token(punctuation, punctuationTokens.get(punctuation))
+            self.tokens.append(token)
+            self.increaseCurrent()
 
     #we have a special function for operations like comparison operators since they can be more than 1 char
     def setOperationTokens(self):
@@ -157,10 +173,10 @@ class Lexer:
         #otherwise it'll be a syntax error
         if not self.error:
             if dot_counter == 0:
-                token = Token(number, "INT")
+                token = Token(number, "INT_VAL")
                 self.tokens.append(token)
             elif dot_counter == 1:
-                token = Token(number, "DOUBLE")
+                token = Token(number, "DOUBLE_VAL")
                 self.tokens.append(token)
             else:
                 print("Syntax Error! Wrong number format! Check line: ", self.line)
