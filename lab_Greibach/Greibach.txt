@@ -1,0 +1,7 @@
+S Ab
+A Sb
+A aB
+B aC
+B bSa
+C AC
+C c
