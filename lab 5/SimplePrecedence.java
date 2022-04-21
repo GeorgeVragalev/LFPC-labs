@@ -1,0 +1,436 @@
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+
+public class SimplePrecedence {
+    protected final LinkedHashMap<String, ArrayList<String>> productions = new LinkedHashMap<>();
+    protected final LinkedHashMap<String, ArrayList<String>> firstHashmap = new LinkedHashMap<>();
+    protected final LinkedHashMap<String, ArrayList<String>> lastHashmap = new LinkedHashMap<>();
+    protected String[][] precedence;
+    protected String everyChar;
+
+
+    public void initialing() {
+        for (String key : productions.keySet()) {
+            firstHashmap.put(key, new ArrayList<>());
+            lastHashmap.put(key, new ArrayList<>());
+        }
+    }
+
+    public void readInput() throws IOException {
+        File file = new File("C:\\Users\\vraga\\OneDrive\\Desktop\\UNI\\LFPC\\LFPC labs\\lab5\\src\\input.txt");
+        BufferedReader br = new BufferedReader(new FileReader(file));
+        String string;
+        while ((string = br.readLine()) != null) { //A aB
+            if (!productions.containsKey(string.substring(0, 1))) {
+                ArrayList<String> arrayList = new ArrayList<>();
+                arrayList.add(string.substring(2));
+                productions.put(String.valueOf(string.charAt(0)), arrayList);
+            } else {
+                productions.get(String.valueOf(string.charAt(0))).add(string.substring(2));
+            }
+        }
+        initialing();
+        System.out.println(productions);
+    }
+
+    public void main() throws IOException {
+        readInput();
+        for (String key : productions.keySet()) {
+            first(key, key);
+            last(key, key);
+        }
+        createTableIndexes();
+        establishingRelations();
+
+        printHashmap(firstHashmap);
+        printHashmap(lastHashmap);
+        System.out.println();
+        printArray();
+
+        //$dabBcbaa$
+        //$ababfcdf$
+        String inputString = "$dabBcbaa$";
+        System.out.println("Input string: " + inputString);
+        parsingString(inputString);
+
+    }
+
+
+    public void first(String key, String value) { // S -> Ab     A
+        for (String valueAtKey : productions.get(key)) {
+            String firstChar = String.valueOf(valueAtKey.charAt(0));
+            boolean isLower = firstChar.equals(firstChar.toLowerCase());
+            if (isLower) { //if first letter is small we add it to firstHashmap
+                if (!firstHashmap.get(value).contains(firstChar)) {
+                    firstHashmap.get(value).add(firstChar);
+                }
+            } else {
+                if (!firstHashmap.get(value).contains(firstChar)) {
+                    firstHashmap.get(value).add(firstChar);
+                    if (firstHashmap.get(firstChar).isEmpty()) {  //if first letter has not already been called
+                        first(firstChar, value);
+                    } else {
+                        for (String val : firstHashmap.get(firstChar)) { //if first letter has been called, we copy her values
+                            if (!firstHashmap.get(value).contains(val)) firstHashmap.get(value).add(val);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    public void last(String key, String value) { // S -> Ab     A
+        for (String valueAtKey : productions.get(key)) {
+            String lastChar = String.valueOf(valueAtKey.charAt(valueAtKey.length() - 1));
+            boolean isLower = lastChar.equals(lastChar.toLowerCase());
+            if (isLower) { //if first letter is small we add it to firstHashmap
+                if (!lastHashmap.get(value).contains(lastChar)) {
+                    lastHashmap.get(value).add(lastChar);
+                }
+            } else {
+                if (!lastHashmap.get(value).contains(lastChar)) {
+                    lastHashmap.get(value).add(lastChar);
+                    if (lastHashmap.get(lastChar).isEmpty()) {  //if first letter has not already been called
+                        last(lastChar, value);
+                    } else {
+                        for (String val : lastHashmap.get(lastChar)) { //if first letter has been called, we copy her values
+                            if (!lastHashmap.get(value).contains(val)) lastHashmap.get(value).add(val);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    public void createTableIndexes() {
+        StringBuilder everyChar = new StringBuilder();
+        for (String key : productions.keySet()) {
+            for (String value : productions.get(key)) {
+                for (Character characters : value.toCharArray()) {
+                    if (everyChar.indexOf(String.valueOf(characters)) == -1) { //does not
+                        everyChar.append(characters);
+                    }
+                }
+            }
+            if (everyChar.indexOf(key) == -1) { //does not
+                everyChar.append(key);
+            }
+        }
+        everyChar.append("$");
+        int size = everyChar.length();
+        precedence = new String[size][size];
+        this.everyChar = String.valueOf(everyChar);
+    }
+
+    public void establishingRelations() {
+        for (String key : productions.keySet()) {
+            for (String value : productions.get(key)) {
+                //FunctionCAll
+                equalPrecedence(value);
+                smallerPrecedence(value);
+                biggerPrecedence(value);
+                dollarRelation();
+            }
+        }
+    }
+
+    public void equalPrecedence(String production) { //bA        ABCab
+        if (production.length() > 1) {
+            for (int i = 0; i < production.length() - 1; i++) {
+                int index = everyChar.indexOf(production.charAt(i)); //4
+                int index2 = everyChar.indexOf(production.charAt(i + 1)); //4
+                precedence[index][index2] = "=";
+            }
+        }
+    }
+
+    public void smallerPrecedence(String production) {
+        for (int i = 1; i < production.length(); i++) {
+            if (Character.isUpperCase(production.charAt(i))) {
+                int index = everyChar.indexOf(production.charAt(i - 1)); //4
+                for (String value : firstHashmap.get(String.valueOf(production.charAt(i)))) {
+                    int index2 = everyChar.indexOf(value.charAt(0));
+                    if (precedence[index][index2] != "=")
+                        precedence[index][index2] = "<";
+
+                }
+                break;
+            }
+        }
+    }
+
+    public void biggerPrecedence(String production) {
+        for (int i = 0; i < production.length() - 1; i++) {
+            if (Character.isUpperCase(production.charAt(i))) { //BV
+                if (Character.isLowerCase(production.charAt(i + 1))) {
+                    int index = everyChar.indexOf(production.charAt(i + 1)); //4
+                    for (String value : lastHashmap.get(String.valueOf(production.charAt(i)))) {
+                        int index2 = everyChar.indexOf(value.charAt(0));
+                        precedence[index2][index] = ">";
+                    }
+                } else {
+                    for (String value : lastHashmap.get(String.valueOf(production.charAt(i)))) {
+                        int index = everyChar.indexOf(value.charAt(0)); //4
+                        for (String first : firstHashmap.get(String.valueOf(production.charAt(i + 1)))) {
+                            if (first.equals(first.toLowerCase())) {
+                                int index2 = everyChar.indexOf(first.charAt(0)); //4
+                                precedence[index][index2] = ">";
+                            }
+                        }
+                    }
+                }
+                break;
+            }
+        }
+    }
+
+    public void dollarRelation() {
+        ArrayList<String> firstLastKeys = new ArrayList<>();
+        for (String key : firstHashmap.keySet()) {
+            for (String value : firstHashmap.get(key)) {
+                if (!firstLastKeys.contains(value)) {
+                    firstLastKeys.add(value);
+                }
+            }
+        }
+        for (String key : firstLastKeys) {
+            int index = everyChar.indexOf(key.charAt(0));
+            precedence[everyChar.indexOf("$")][index] = "<";
+        }
+
+        firstLastKeys.removeAll(firstLastKeys);
+
+        for (String key : lastHashmap.keySet()) {
+            for (String value : lastHashmap.get(key)) {
+                if (!firstLastKeys.contains(value)) {
+                    firstLastKeys.add(value);
+                }
+            }
+        }
+        for (String key : firstLastKeys) {
+            int index = everyChar.indexOf(key.charAt(0));
+            precedence[index][everyChar.indexOf("$")] = ">";
+        }
+    }
+
+    /////////////////////////////////////////////////////
+    //Create the inital string with the relations between each character
+    public void parsingString(String input) {
+        //abCd
+        StringBuilder output = new StringBuilder(input);
+        //we start with inital string
+        int signCounter = 0;
+        boolean wrongString = false;
+        for (int i = 0; i < input.length() - 1; i++) {
+
+            //We get the 2 chars we are comparing and their indexes
+            String char1 = String.valueOf(input.charAt(i));
+            String char2 = String.valueOf(input.charAt(i + 1));
+
+            int i1 = getIndex(char1);
+            int i2 = getIndex(char2);
+
+            if (i1 == -1 || i2 == -1) {
+                wrongString = true;
+                break;
+            }
+            //we get their relation using the table
+            String sign = precedence[i1][i2];
+
+            if (sign == null) {
+                wrongString = true;
+                break;
+            }
+            signCounter++;
+
+            //we insert this relation between these two characters
+            output.insert(i + signCounter, sign);
+        }
+        System.out.println(output);
+        //we call the main function to create the parsing
+        if (!wrongString) {
+            createSimplePrecendence(String.valueOf(output));
+        } else {
+            System.out.println("This string doesn't match");
+        }
+    }
+
+    public boolean checkValidString(String input) {
+        for (int i = 1; i < input.length() - 1; i++) {
+            if (Character.isAlphabetic(input.charAt(i)) && Character.isAlphabetic(input.charAt(i - 1))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public void createSimplePrecendence(String input) {
+        StringBuilder output = new StringBuilder(input);
+
+        if (!checkValidString(input)) {
+            System.out.println("Input doesn't work with grammar");
+        } else {
+            //we loop through the current char and see what sign it is to determine what we should do about it
+            for (int i = 0; i < output.length(); i++) {
+                String currentChar = String.valueOf(output.charAt(i));
+                //if its a > sign then we get all the chars before it and swap it with the corresponding key from productions table
+                if (currentChar.equals(">")) {
+                    String s = createBiggerProduction(String.valueOf(output), i);
+                    if (!s.equals("")) {
+                        createSimplePrecendence(s);
+                        break;
+                    }
+                }
+                //if it's equal sign we call the function that combines all the equal signs and forms a production that we swap for key
+                else if (currentChar.equals("=")) {
+                    String s = createEqualProduction(String.valueOf(output), i);
+                    if (!s.equals("")) {
+                        createSimplePrecendence(s);
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    public String createEqualProduction(String input, int index) {//b B
+        String currentChar = String.valueOf(input.charAt(index - 1));
+        //string for storing the result of all equal signs so b=B  ->  bB
+        StringBuilder equalString = new StringBuilder();
+
+        equalString.append(currentChar);
+        //kep track of the index we end at
+        int lastIndex;
+
+        for (lastIndex = index; lastIndex < input.length(); lastIndex++) {
+            if (String.valueOf(input.charAt(lastIndex)).equals("=")) {
+                equalString.append(input.charAt(lastIndex + 1));
+            } else if (!Character.isAlphabetic(input.charAt(lastIndex))) {
+                break;
+            }
+        }
+        //we return the key that is the same as the production
+        String returnKey = "";
+        for (String key : productions.keySet()) {
+            if (productions.get(key).contains(String.valueOf(equalString))) {
+                returnKey = key;
+                break;
+            }
+        }
+        if (returnKey.equals("")) {
+            return "";
+        }
+
+        //create a copy of input str
+        StringBuilder output = new StringBuilder(input);
+
+        //we replace the signs before and after the new key added
+        //////////Need to check the string bounds if they fit
+        String newSign = "";
+        //sign before
+        int l = index - equalString.length() - 1;
+        if (index - 3 >= 0) {
+            String left = String.valueOf(output.charAt(index - 3));
+            newSign = getSymbol(left, returnKey);
+            if (!newSign.equals(""))
+                output.replace(index - 2, index - 1, newSign);
+        }
+        //daTcA
+        //sign after
+        int len = output.length();
+        int r = index + equalString.length() * 2 - 1;
+        if (r < output.length()) {
+            String right = String.valueOf(output.charAt(r));
+            newSign = getSymbol(returnKey, right);
+            if (!newSign.equals(""))
+                output.replace(lastIndex, lastIndex + 1, newSign);
+        }
+
+        //we replace the production which had equal signs in between
+        output.replace(index - 1, lastIndex, returnKey);
+
+        System.out.println(output);
+        return String.valueOf(output);
+    }
+
+    public String createBiggerProduction(String input, int pos) {
+        //we get everything before the > sign
+
+        String prevChar = String.valueOf(input.charAt(pos - 1));
+
+        String returnKey = "";
+        StringBuilder output = new StringBuilder(input);
+        for (String key : productions.keySet()) {
+            if (productions.get(key).contains(prevChar)) {
+                returnKey = key;
+                break;
+            }
+        }
+        if (returnKey.equals("")) {
+            return "";
+        }
+
+        //we replace the signs before and after the new key added
+        String left = String.valueOf(output.charAt(pos - 3));
+        String right = String.valueOf(output.charAt(pos + 1));
+        //sign before
+        String newSign = getSymbol(left, returnKey);
+        output.replace(pos - 2, pos - 1, newSign);
+        //sign after
+        newSign = getSymbol(returnKey, right);
+        output.replace(pos, pos + 1, newSign);
+
+        //we replace the production which had equal signs in between
+        output.replace(pos - 1, pos, returnKey);
+        System.out.println(output);
+        return String.valueOf(output);
+    }
+
+    public String getSymbol(String left, String right) {
+
+        int i1 = getIndex(left);
+        int i2 = getIndex(right);
+
+        if (i1 == -1 || i2 == -1) {
+            return "";
+        }
+        String sign = precedence[i1][i2];
+
+        if (sign == null) {
+            return "";
+        }
+        return sign;
+    }
+
+
+    public int getIndex(String production) {
+        return everyChar.indexOf(production.charAt(0));
+    }
+
+    public void printHashmap(LinkedHashMap<String, ArrayList<String>> hashMap) {
+        System.out.println(hashMap);
+    }
+
+    public void printArray() {
+        System.out.print(" ");
+        for (int i = 0; i < everyChar.length(); i++) {
+            System.out.print(" " + everyChar.charAt(i));
+        }
+        System.out.println();
+        for (int i = 0; i < everyChar.length(); i++) {
+            System.out.print(everyChar.charAt(i));
+            for (int j = 0; j < everyChar.length(); j++) {
+                if (precedence[i][j] == null) {
+                    System.out.print(" -");
+                } else
+                    System.out.print(" " + precedence[i][j]);
+            }
+            System.out.println();
+        }
+    }
+
+}
